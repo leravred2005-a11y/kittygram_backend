@@ -1,51 +1,172 @@
 {
   "info": {
-    "_postman_id": "5fa9a8a2-f63c-4309-8a48-97cbca4650ed",
-    "name": "Kittygram API",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "_exporter_id": "54320004",
-    "_collection_link": "https://go.postman.co/collection/54320004-5fa9a8a2-f63c-4309-8a48-97cbca4650ed?source=collection_link"
+    "_postman_id": "suslova-kittygram-likes",
+    "name": "Kittygram API — Суслова (Лайки и избранное)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://150.241.106.212:8765",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ],
   "item": [
     {
-      "name": "GET /api/collections/",
-      "request": {
-        "method": "GET",
-        "header": []
-      },
-      "response": []
+      "name": "Авторизация",
+      "item": [
+        {
+          "name": "Регистрация",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/users/", "host": ["{{base_url}}"], "path": ["api", "users", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"suslova\",\n  \"password\": \"Kittygram2024!\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Получить токен",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.collectionVariables.set('token', json.auth_token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/token/login/", "host": ["{{base_url}}"], "path": ["api", "token", "login", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"suslova\",\n  \"password\": \"Kittygram2024!\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Выйти",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Token {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/token/logout/", "host": ["{{base_url}}"], "path": ["api", "token", "logout", ""] }
+          }
+        }
+      ]
     },
     {
-      "name": "POST /api/collections/",
-      "request": {
-        "method": "GET",
-        "header": []
-      },
-      "response": []
+      "name": "Котики (базовый CRUD)",
+      "item": [
+        {
+          "name": "Список котов",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Token {{token}}" }],
+            "url": { "raw": "{{base_url}}/api/cats/", "host": ["{{base_url}}"], "path": ["api", "cats", ""] }
+          }
+        },
+        {
+          "name": "Создать кота",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Token {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/cats/", "host": ["{{base_url}}"], "path": ["api", "cats", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Барсик\",\n  \"color\": \"#FFA500\",\n  \"birth_year\": 2020\n}"
+            }
+          }
+        },
+        {
+          "name": "Получить кота по ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Token {{token}}" }],
+            "url": { "raw": "{{base_url}}/api/cats/1/", "host": ["{{base_url}}"], "path": ["api", "cats", "1", ""] }
+          }
+        },
+        {
+          "name": "Обновить кота (PATCH)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Token {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/cats/1/", "host": ["{{base_url}}"], "path": ["api", "cats", "1", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"color\": \"#000000\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Удалить кота",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Token {{token}}" }],
+            "url": { "raw": "{{base_url}}/api/cats/1/", "host": ["{{base_url}}"], "path": ["api", "cats", "1", ""] }
+          }
+        }
+      ]
     },
     {
-      "name": "GET /api/collections/?name=Рыжие",
-      "request": {
-        "method": "GET",
-        "header": []
-      },
-      "response": []
-    },
-    {
-      "name": "POST /api/collections/1/add_cat/",
-      "request": {
-        "method": "GET",
-        "header": []
-      },
-      "response": []
-    },
-    {
-      "name": "DELETE /api/collections/1/",
-      "request": {
-        "method": "GET",
-        "header": []
-      },
-      "response": []
+      "name": "Лайки и избранное (тема Сусловой)",
+      "item": [
+        {
+          "name": "Лайкнуть кота",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Token {{token}}" }],
+            "url": { "raw": "{{base_url}}/api/cats/1/like/", "host": ["{{base_url}}"], "path": ["api", "cats", "1", "like", ""] },
+            "description": "Поставить лайк коту с ID=1. Поле is_liked станет true, likes_count увеличится."
+          }
+        },
+        {
+          "name": "Убрать лайк",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Token {{token}}" }],
+            "url": { "raw": "{{base_url}}/api/cats/1/like/", "host": ["{{base_url}}"], "path": ["api", "cats", "1", "like", ""] },
+            "description": "Убрать лайк с кота с ID=1."
+          }
+        },
+        {
+          "name": "Мои лайки (избранное)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Token {{token}}" }],
+            "url": { "raw": "{{base_url}}/api/cats/liked/", "host": ["{{base_url}}"], "path": ["api", "cats", "liked", ""] },
+            "description": "Список котов которых лайкнул текущий пользователь."
+          }
+        },
+        {
+          "name": "Топ котов по лайкам",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Token {{token}}" }],
+            "url": { "raw": "{{base_url}}/api/cats/top/", "host": ["{{base_url}}"], "path": ["api", "cats", "top", ""] },
+            "description": "Топ-10 котов отсортированных по количеству лайков."
+          }
+        }
+      ]
     }
   ]
 }

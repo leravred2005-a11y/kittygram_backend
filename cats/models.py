@@ -37,3 +37,20 @@ class AchievementCat(models.Model):
 
     def __str__(self):
         return f'{self.achievement} {self.cat}'
+
+
+class Like(models.Model):
+    user = models.ForeignKey(
+        User, related_name='likes',
+        on_delete=models.CASCADE
+    )
+    cat = models.ForeignKey(
+        Cat, related_name='likes',
+        on_delete=models.CASCADE
+    )
+
+    class Meta:
+        unique_together = ('user', 'cat')
+
+    def __str__(self):
+        return f'{self.user} likes {self.cat}'

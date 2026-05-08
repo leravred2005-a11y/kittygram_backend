@@ -7,7 +7,7 @@ import webcolors
 
 import datetime as dt
 
-from .models import Achievement, AchievementCat, Cat
+from .models import Achievement, AchievementCat, Cat, Like
 
 
 class Hex2NameColor(serializers.Field):
@@ -45,14 +45,25 @@ class CatSerializer(serializers.ModelSerializer):
     color = Hex2NameColor()
     age = serializers.SerializerMethodField()
     image = Base64ImageField(required=False, allow_null=True)
-    
+    likes_count = serializers.SerializerMethodField()
+    is_liked = serializers.SerializerMethodField()
+
     class Meta:
         model = Cat
         fields = (
             'id', 'name', 'color', 'birth_year', 'achievements', 'owner', 'age',
-            'image'
-            )
+            'image', 'likes_count', 'is_liked'
+        )
         read_only_fields = ('owner',)
+
+    def get_likes_count(self, obj):
+        return obj.likes.count()
+
+    def get_is_liked(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.likes.filter(user=request.user).exists()
+        return False
 
     def get_age(self, obj):
         return dt.datetime.now().year - obj.birth_year
@@ -92,3 +103,9 @@ class CatSerializer(serializers.ModelSerializer):
 
         instance.save()
         return instance
+
+class LikeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Like
+        fields = ('id', 'cat', 'user')
+        read_only_fields = ('user',)
