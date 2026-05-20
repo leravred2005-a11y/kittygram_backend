@@ -1,0 +1,45 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-kittygram}
+      POSTGRES_USER: ${POSTGRES_USER:-kittygram}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-kittygram}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - DATABASE_URL=postgres://${POSTGRES_USER:-kittygram}:${POSTGRES_PASSWORD:-kittygram}@db:5432/${POSTGRES_DB:-kittygram}
+    volumes:
+      - media_data:/app/media
+      - static_data:/app/staticfiles
+    depends_on:
+      - db
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py collectstatic --noinput &&
+             gunicorn kittygram_backend.wsgi:application --bind 0.0.0.0:8000"
+
+  nginx:
+    image: nginx:1.25-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - media_data:/var/www/media
+      - static_data:/var/www/static
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  media_data:
+  static_data:

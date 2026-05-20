@@ -7,7 +7,7 @@ import webcolors
 
 import datetime as dt
 
-from .models import Achievement, AchievementCat, Cat, Like
+from .models import Achievement, AchievementCat, Cat, Favorite, Like
 
 
 class Hex2NameColor(serializers.Field):
@@ -47,12 +47,14 @@ class CatSerializer(serializers.ModelSerializer):
     image = Base64ImageField(required=False, allow_null=True)
     likes_count = serializers.SerializerMethodField()
     is_liked = serializers.SerializerMethodField()
+    is_favorited = serializers.SerializerMethodField()
+    favorites_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Cat
         fields = (
             'id', 'name', 'color', 'birth_year', 'achievements', 'owner', 'age',
-            'image', 'likes_count', 'is_liked'
+            'image', 'likes_count', 'is_liked', 'is_favorited', 'favorites_count'
         )
         read_only_fields = ('owner',)
 
@@ -64,6 +66,15 @@ class CatSerializer(serializers.ModelSerializer):
         if request and request.user.is_authenticated:
             return obj.likes.filter(user=request.user).exists()
         return False
+
+    def get_is_favorited(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.favorited_by.filter(user=request.user).exists()
+        return False
+
+    def get_favorites_count(self, obj):
+        return obj.favorited_by.count()
 
     def get_age(self, obj):
         return dt.datetime.now().year - obj.birth_year
@@ -109,3 +120,13 @@ class LikeSerializer(serializers.ModelSerializer):
         model = Like
         fields = ('id', 'cat', 'user')
         read_only_fields = ('user',)
+
+
+class FavoriteSerializer(serializers.ModelSerializer):
+    cat_name = serializers.CharField(source='cat.name', read_only=True)
+    cat_color = serializers.CharField(source='cat.color', read_only=True)
+
+    class Meta:
+        model = Favorite
+        fields = ('id', 'cat', 'cat_name', 'cat_color', 'created_at')
+        read_only_fields = ('user', 'created_at')
