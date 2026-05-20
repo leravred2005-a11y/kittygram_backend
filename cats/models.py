@@ -48,9 +48,11 @@ class Like(models.Model):
         Cat, related_name='likes',
         on_delete=models.CASCADE
     )
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         unique_together = ('user', 'cat')
+        ordering = ['-created_at']
 
     def __str__(self):
         return f'{self.user} likes {self.cat}'

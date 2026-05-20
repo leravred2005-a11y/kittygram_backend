@@ -1,5 +1,5 @@
 from django.db.models import Count
-from rest_framework import viewsets, status
+from rest_framework import mixins, viewsets, status
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -36,9 +36,20 @@ class CatViewSet(viewsets.ModelViewSet):
         return context
 
     # ── Лайки ──────────────────────────────────────────────
-    @action(detail=True, methods=['post', 'delete'])
+    @action(detail=True, methods=['get', 'post', 'delete'])
     def like(self, request, pk=None):
         cat = self.get_object()
+
+        if request.method == 'GET':
+            is_liked = (
+                request.user.is_authenticated
+                and Like.objects.filter(user=request.user, cat=cat).exists()
+            )
+            return Response({
+                'is_liked': is_liked,
+                'likes_count': cat.likes.count(),
+            })
+
         if request.method == 'POST':
             _, created = Like.objects.get_or_create(user=request.user, cat=cat)
             if not created:
@@ -50,6 +61,8 @@ class CatViewSet(viewsets.ModelViewSet):
                 {'detail': 'Лайк добавлен.', 'likes_count': cat.likes.count()},
                 status=status.HTTP_201_CREATED,
             )
+
+        # DELETE
         deleted, _ = Like.objects.filter(user=request.user, cat=cat).delete()
         if not deleted:
             return Response(
@@ -124,6 +137,45 @@ class CatViewSet(viewsets.ModelViewSet):
             return self.get_paginated_response(serializer.data)
         serializer = FavoriteSerializer(favorites, many=True)
         return Response(serializer.data)
+
+
+class LikeViewSet(
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet,
+):
+    """
+    Список всех лайков с фильтрацией по коту и поиском по имени кота.
+    Удалить можно только свой лайк.
+    """
+    serializer_class = LikeSerializer
+    pagination_class = PageNumberPagination
+
+    def get_queryset(self):
+        qs = Like.objects.select_related('cat', 'user').all()
+        cat_id = self.request.query_params.get('cat')
+        if cat_id:
+            qs = qs.filter(cat_id=cat_id)
+        cat_name = self.request.query_params.get('cat_name')
+        if cat_name:
+            qs = qs.filter(cat__name__icontains=cat_name)
+        return qs
+
+    def get_permissions(self):
+        if self.action in ('list', 'retrieve'):
+            return [AllowAny()]
+        return [IsAuthenticated()]
+
+    def destroy(self, request, *args, **kwargs):
+        like = self.get_object()
+        if like.user != request.user:
+            return Response(
+                {'detail': 'Нельзя удалить чужой лайк.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        like.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class AchievementViewSet(viewsets.ModelViewSet):

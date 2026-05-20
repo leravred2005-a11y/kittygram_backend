@@ -116,10 +116,13 @@ class CatSerializer(serializers.ModelSerializer):
         return instance
 
 class LikeSerializer(serializers.ModelSerializer):
+    user = serializers.StringRelatedField(read_only=True)
+    cat_name = serializers.CharField(source='cat.name', read_only=True)
+
     class Meta:
         model = Like
-        fields = ('id', 'cat', 'user')
-        read_only_fields = ('user',)
+        fields = ('id', 'user', 'cat', 'cat_name', 'created_at')
+        read_only_fields = ('user', 'created_at')
 
 
 class FavoriteSerializer(serializers.ModelSerializer):

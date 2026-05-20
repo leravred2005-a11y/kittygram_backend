@@ -10,12 +10,13 @@ from drf_spectacular.views import (
     SpectacularRedocView,
 )
 
-from cats.views import AchievementViewSet, CatViewSet
+from cats.views import AchievementViewSet, CatViewSet, LikeViewSet
 
 
 router = routers.DefaultRouter()
 router.register(r'cats', CatViewSet)
 router.register(r'achievements', AchievementViewSet)
+router.register(r'likes', LikeViewSet, basename='like')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
